@@ -1,14 +1,16 @@
 ﻿namespace BackendAPI.Models
 {
-    public class Books
+    public class Book
     {
-        public int BookId { get; set; }
+        public int Id { get; set; }
         public required string BookName { get; set; }
         public required string ISBN { get; set; }
+        public int AuthorId { get; set; }
+        public Author Author { get; set; }
 
         public DateTime AdddedAt { get; set; }
 
-        public Books()
+        public Book()
         {
             this.AdddedAt = DateTime.Now;
         }

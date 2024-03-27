@@ -1,4 +1,4 @@
-using BackendAPI.Models;
+﻿using BackendAPI.Models;
 using BackendAPI.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using SharedClassLibrary.Contracts;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
+using BackendAPI.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 

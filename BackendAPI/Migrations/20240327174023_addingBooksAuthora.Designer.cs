@@ -4,6 +4,7 @@ using BackendAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240327174023_addingBooksAuthora")]
+    partial class addingBooksAuthora
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -106,7 +109,7 @@ namespace BackendAPI.Migrations
                     b.ToTable("Authors");
                 });
 
-            modelBuilder.Entity("BackendAPI.Models.Book", b =>
+            modelBuilder.Entity("BackendAPI.Models.Books", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -267,7 +270,7 @@ namespace BackendAPI.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BackendAPI.Models.Book", b =>
+            modelBuilder.Entity("BackendAPI.Models.Books", b =>
                 {
                     b.HasOne("BackendAPI.Models.Author", "Author")
                         .WithMany("Books")
