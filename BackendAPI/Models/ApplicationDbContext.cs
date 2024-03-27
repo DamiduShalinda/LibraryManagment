@@ -8,7 +8,5 @@ namespace BackendAPI.Models
         public ApplicationDbContext(DbContextOptions options) : base(options)
         {
         }
-
-        public DbSet<Books> Books { get; set; }
     }
 }
