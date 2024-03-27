@@ -3,10 +3,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BackendAPI.Models
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext(DbContextOptions options) : IdentityDbContext<ApplicationUser> (options)
     {
-        public ApplicationDbContext(DbContextOptions options) : base(options)
-        {
-        }
+        
     }
 }
