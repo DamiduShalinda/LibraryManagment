@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BackendAPI.Models;
+using BackendAPI.Models.DTO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BackendAPI.Models;
 
 namespace BackendAPI.Controllers
 {
@@ -20,7 +21,17 @@ namespace BackendAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
         {
-            return await _context.Authors.ToListAsync();
+            return await _context.Authors
+                .Include(_ => _.Books)
+                .ToListAsync();
+        }
+
+        [HttpGet("by-id")]
+        public async Task<ActionResult<IEnumerable<AuthorNameWithId>>> GetAuthorsNamesWithIds()
+        {
+            return await _context.Authors
+                .Select(_ => new AuthorNameWithId(_.Id , _.AuthorName))
+                .ToListAsync();
         }
 
         // GET: api/Authors/5
@@ -71,8 +82,21 @@ namespace BackendAPI.Controllers
         // POST: api/Authors
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(Author author)
+        public async Task<ActionResult<Author>> PostAuthor(AuthorNameOnly authorName)
         {
+            if (!ModelState.IsValid)
+            {
+                BadRequest(ModelState);
+            }
+            var existingAuthor = await _context.Authors.FirstOrDefaultAsync(a => a.AuthorName == authorName.AuthorName);
+            if (existingAuthor != null)
+            {
+                return Conflict("An author with the same name already exists.");
+            }
+            Author author = new()
+            {
+                AuthorName = authorName.AuthorName
+            };
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
 

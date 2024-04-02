@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using BackendAPI.Models;
+using SharedClassLibrary.DTOs;
+using Microsoft.AspNetCore.Http.HttpResults;
+using BackendAPI.Models.DTO;
 
 namespace BackendAPI.Controllers
 {
@@ -18,9 +21,11 @@ namespace BackendAPI.Controllers
 
         // GET: api/Books
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        public async Task<ActionResult<IEnumerable<BookDataWithAuthor>>> GetBooks()
         {
-            return await _context.Books.ToListAsync();
+            return await _context.Books
+                .Select(_ => new BookDataWithAuthor(_.Id , _.BookName , _.ISBN , _.Author.AuthorName))
+                .ToListAsync();
         }
 
         // GET: api/Books/5
@@ -71,13 +76,22 @@ namespace BackendAPI.Controllers
         // POST: api/Books
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Book>> PostBooks(Book books)
+        public async Task<ActionResult<Book>> PostBooks(BookDTO bookDTO)
         {
-            _context.Books.Add(books);
+            var book = new Book
+            {
+                AdddedAt = DateTime.Now,
+                AuthorId = bookDTO.AuthorId,
+                BookName = bookDTO.BookName,
+                ISBN = bookDTO.ISBN,
+            };
+
+            _context.Books.Add(book);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBooks", new { id = books.Id }, books);
+            return CreatedAtAction("GetBooks", new { id = book.Id }, book);
         }
+
 
         // DELETE: api/Books/5
         [HttpDelete("{id}")]

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240327174023_addingBooksAuthora")]
-    partial class addingBooksAuthora
+    [Migration("20240402093926_initial1")]
+    partial class initial1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -109,7 +109,7 @@ namespace BackendAPI.Migrations
                     b.ToTable("Authors");
                 });
 
-            modelBuilder.Entity("BackendAPI.Models.Books", b =>
+            modelBuilder.Entity("BackendAPI.Models.Book", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -270,7 +270,7 @@ namespace BackendAPI.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BackendAPI.Models.Books", b =>
+            modelBuilder.Entity("BackendAPI.Models.Book", b =>
                 {
                     b.HasOne("BackendAPI.Models.Author", "Author")
                         .WithMany("Books")
