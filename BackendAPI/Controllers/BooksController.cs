@@ -24,7 +24,15 @@ namespace BackendAPI.Controllers
         public async Task<ActionResult<IEnumerable<BookDataWithAuthor>>> GetBooks()
         {
             return await _context.Books
-                .Select(_ => new BookDataWithAuthor(_.Id , _.BookName , _.ISBN , _.Author.AuthorName))
+                .Select(_ => new BookDataWithAuthor(_.Id , _.BookName , _.ISBN , _.Author.AuthorName , _.Status.ToString()))
+                .ToListAsync();
+        }
+
+        [HttpGet("by-name")]
+        public async Task<ActionResult<IEnumerable<string>>> GetBooksNames()
+        {
+            return await _context.Books
+                .Select(_ => _.BookName)
                 .ToListAsync();
         }
 
@@ -78,12 +86,16 @@ namespace BackendAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Book>> PostBooks(BookDTO bookDTO)
         {
+            var author = _context.Authors.FirstOrDefault(_ => _.AuthorName == bookDTO.AuthorName);
+            if (author == null)
+                return BadRequest();
             var book = new Book
             {
                 AdddedAt = DateTime.Now,
-                AuthorId = bookDTO.AuthorId,
+                AuthorId = author.Id,
                 BookName = bookDTO.BookName,
                 ISBN = bookDTO.ISBN,
+                BookDescription = bookDTO.BookDescription,
             };
 
             _context.Books.Add(book);

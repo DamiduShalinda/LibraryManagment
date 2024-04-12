@@ -11,9 +11,12 @@ namespace SharedClassLibrary.DTOs
     {
         [Required]
         public string BookName { get; set; }
+
+        [Required]
+        public string BookDescription { get; set; }
         [Required]
         public string ISBN { get; set; }
-        [Range(1, int.MaxValue)]
-        public int AuthorId { get; set; }
+        [Required]
+        public string AuthorName { get; set; }
     };
 }

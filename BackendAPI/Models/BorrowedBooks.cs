@@ -1,4 +1,6 @@
-﻿namespace BackendAPI.Models
+﻿using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.Http.HttpResults;
+namespace BackendAPI.Models
 {
     public class BorrowedBooks
     {
@@ -17,4 +19,6 @@
             this.BorrowedDate = DateTime.Now;
         }
     }
+
+
 }
