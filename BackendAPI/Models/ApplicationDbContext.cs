@@ -9,6 +9,7 @@ namespace BackendAPI.Models
         
         public DbSet<Book> Books { get; set; }
         public DbSet<Author> Authors { get; set; }
+        public DbSet<BorrowedBooks> BorrowedBooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -17,6 +18,14 @@ namespace BackendAPI.Models
                .HasOne(b => b.Author)
                .WithMany(a => a.Books)
                .HasForeignKey(b => b.AuthorId);
+            builder.Entity<BorrowedBooks>()
+                .HasOne(bb => bb.ApplicationUser)
+                .WithMany(u => u.BorrowedBooks)
+                .HasForeignKey(bb => bb.ApplicationUserId);
+            builder.Entity<BorrowedBooks>()
+                .HasMany(bb => bb.Books)
+                .WithOne();
+
         }
     }
 }

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BackendAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class initial1 : Migration
+    public partial class addingBorrowed : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -214,6 +214,30 @@ namespace BackendAPI.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "BorrowedBooks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    BorrowedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ReturnedDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    IsApproved = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    ApplicationUserId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BorrowedBooks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BorrowedBooks_AspNetUsers_ApplicationUserId",
+                        column: x => x.ApplicationUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Books",
                 columns: table => new
                 {
@@ -224,7 +248,11 @@ namespace BackendAPI.Migrations
                     ISBN = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AuthorId = table.Column<int>(type: "int", nullable: false),
-                    AdddedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    BookDescription = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    AdddedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    BorrowedBooksId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -235,6 +263,11 @@ namespace BackendAPI.Migrations
                         principalTable: "Authors",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Books_BorrowedBooks_BorrowedBooksId",
+                        column: x => x.BorrowedBooksId,
+                        principalTable: "BorrowedBooks",
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -279,6 +312,16 @@ namespace BackendAPI.Migrations
                 name: "IX_Books_AuthorId",
                 table: "Books",
                 column: "AuthorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Books_BorrowedBooksId",
+                table: "Books",
+                column: "BorrowedBooksId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BorrowedBooks_ApplicationUserId",
+                table: "BorrowedBooks",
+                column: "ApplicationUserId");
         }
 
         /// <inheritdoc />
@@ -306,10 +349,13 @@ namespace BackendAPI.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Authors");
 
             migrationBuilder.DropTable(
-                name: "Authors");
+                name: "BorrowedBooks");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }

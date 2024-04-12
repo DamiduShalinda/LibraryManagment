@@ -8,4 +8,6 @@
         public string Authorname { get; set; } = authorname;
         public string BookName { get; set; } = bookName;
     };
+
+    public record BookCheckOutRequest(List<int> BookList , DateTime CheckOutDate);
 }

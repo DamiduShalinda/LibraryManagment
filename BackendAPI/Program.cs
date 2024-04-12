@@ -80,9 +80,10 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<IUserAccount , AccountRepository>();
 
+builder.Services.AddScoped<JwtHelper>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

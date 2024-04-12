@@ -1,23 +1,23 @@
-﻿using Microsoft.AspNetCore.OpenApi;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using System;
+
 namespace BackendAPI.Models
 {
     public class BorrowedBooks
     {
         public int Id { get; set; }
 
-        public DateTime BorrowedDate { get; set; }
+        public DateTime BorrowedDate { get; set; } = DateTime.Now;
 
-        public DateTime? ReturnedDate { get; set; }
+        public DateTime ReturnedDate { get; set; }
 
-        public int BookId { get; set; }
-        public required Book Book { get; set; }
-        public int ApplicationUserId { get; set; }
-        public required ApplicationUser ApplicationUser { get; set; }
-        public BorrowedBooks()
-        {
-            this.BorrowedDate = DateTime.Now;
-        }
+        public bool IsApproved { get; set; } = false;
+
+        public string RejectedReason { get; set; } = "";
+
+        public virtual ICollection<Book> Books { get; set; } = new List<Book>();
+        public  string ApplicationUserId { get; set; }
+        public virtual  ApplicationUser ApplicationUser { get; set; }
+
     }
 
 
