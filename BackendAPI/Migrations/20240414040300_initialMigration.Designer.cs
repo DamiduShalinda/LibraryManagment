@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240412180907_addeRejectedReasonRowToBorrowedTable")]
-    partial class addeRejectedReasonRowToBorrowedTable
+    [Migration("20240414040300_initialMigration")]
+    partial class initialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -131,9 +131,6 @@ namespace BackendAPI.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("BorrowedBooksId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ISBN")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -144,8 +141,6 @@ namespace BackendAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
-
-                    b.HasIndex("BorrowedBooksId");
 
                     b.ToTable("Books");
                 });
@@ -180,6 +175,21 @@ namespace BackendAPI.Migrations
                     b.HasIndex("ApplicationUserId");
 
                     b.ToTable("BorrowedBooks");
+                });
+
+            modelBuilder.Entity("BookBorrowedBooks", b =>
+                {
+                    b.Property<int>("BooksId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BorrowedBooksId")
+                        .HasColumnType("int");
+
+                    b.HasKey("BooksId", "BorrowedBooksId");
+
+                    b.HasIndex("BorrowedBooksId");
+
+                    b.ToTable("BookBorrowedBooks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -322,10 +332,6 @@ namespace BackendAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BackendAPI.Models.BorrowedBooks", null)
-                        .WithMany("Books")
-                        .HasForeignKey("BorrowedBooksId");
-
                     b.Navigation("Author");
                 });
 
@@ -338,6 +344,21 @@ namespace BackendAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");
+                });
+
+            modelBuilder.Entity("BookBorrowedBooks", b =>
+                {
+                    b.HasOne("BackendAPI.Models.Book", null)
+                        .WithMany()
+                        .HasForeignKey("BooksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BackendAPI.Models.BorrowedBooks", null)
+                        .WithMany()
+                        .HasForeignKey("BorrowedBooksId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -397,11 +418,6 @@ namespace BackendAPI.Migrations
                 });
 
             modelBuilder.Entity("BackendAPI.Models.Author", b =>
-                {
-                    b.Navigation("Books");
-                });
-
-            modelBuilder.Entity("BackendAPI.Models.BorrowedBooks", b =>
                 {
                     b.Navigation("Books");
                 });

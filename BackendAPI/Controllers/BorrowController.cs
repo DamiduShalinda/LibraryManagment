@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BackendAPI.Controllers
 {
@@ -20,18 +21,47 @@ namespace BackendAPI.Controllers
         private readonly JwtHelper _jwtHelper = jwtHelper;
 
 
-        [HttpGet("usernames")]
-        public async Task<ActionResult<IEnumerable<string>>> GetUserNames()
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckouts()
         {
-            var userList = await _userManager.Users.ToListAsync();
-            return userList.Select(_ => _.Name ?? "").ToList();
+            try
+            {
+                var bookCheckOutList = await _context.BorrowedBooks.Where(_ => _.IsApproved == false).ToListAsync();
+                if (bookCheckOutList.Count == 0)
+                    return NoContent();
+               List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUserId, _.BorrowedDate)).ToList();
+                return Ok(itemList);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpGet("booknames")]
-        public async Task<ActionResult<IEnumerable<string>>> GetBooksName()
+        [HttpGet("{id}")]
+        public async Task<ActionResult<GetCheckoutByIdDTO>> GetCheckOutBookById(int Id)
         {
-            var userList = await _context.Books.ToListAsync();
-            return userList.Select(_ => _.BookName).ToList();
+            try
+            {
+                var item = await _context.BorrowedBooks
+                        .Include(_ => _.Books)
+                        .Include(_ => _.ApplicationUser)
+                        .FirstOrDefaultAsync(_ => _.Id == Id);
+                if (item == null)
+                    return NoContent();
+                GetCheckoutByIdDTO response = new(
+                    Id: item.Id,
+                    BorrowedDate: item.BorrowedDate,
+                    IsApproved: item.IsApproved,
+                    RejectedReason: item.RejectedReason,
+                    Books: item.Books.Select(_ => new GetCheckoutByIdBooksDTO(_.Id, _.BookName, _.ISBN, _.Status.ToString())).ToList(),
+                    User: new GetCheckoutByIdUserDTO(item.ApplicationUser.Id, item.ApplicationUser.Name, item.ApplicationUser.Email)
+                    );
+
+                return Ok(response);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("get-checkout-books-data")]
@@ -64,6 +94,9 @@ namespace BackendAPI.Controllers
                 var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null)
                     return Unauthorized();
+                var previousBookRequest = await _context.BorrowedBooks.FirstOrDefaultAsync(_ => _.ApplicationUser.Id == userIdClaim);
+                if (previousBookRequest != null && previousBookRequest.IsApproved == false)
+                    return Conflict("Already Have a pending request under this user");
 
                 List<Book> bookList = [];
                 foreach (var id in request.BookList)
@@ -75,12 +108,15 @@ namespace BackendAPI.Controllers
                         bookList.Add(book);
                 }
 
+                var user = await _userManager.Users.FirstOrDefaultAsync(_ => _.Id == userIdClaim);
+                if (user == null)
+                    return NotFound();
+
                 BorrowedBooks borrowedBooks = new()
                 {
                     Books = bookList,
-                    BorrowedDate = DateTime.Now,
                     ReturnedDate = request.CheckOutDate,
-                    ApplicationUserId = userIdClaim
+                    ApplicationUser = user
                 };
                 _context.BorrowedBooks.Add(borrowedBooks);
                 await _context.SaveChangesAsync();
@@ -108,6 +144,23 @@ namespace BackendAPI.Controllers
                 await _context.SaveChangesAsync();
                 string status = RejectedReason != null ? "Rejected" : "Approved";
                 return Ok($"Request under id:{id} is {status}");
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<string>> DeleteCheckoutRequest(int id)
+        {
+            try
+            {
+                var deletingRequest = await _context.BorrowedBooks.FindAsync(id);
+                if (deletingRequest == null)
+                    return NotFound();
+                _context.BorrowedBooks.Remove(deletingRequest);
+                await _context.SaveChangesAsync();
+                return Ok("Deleted the checkout Request");
             } catch (Exception ex)
             {
                 return BadRequest(ex.Message);
