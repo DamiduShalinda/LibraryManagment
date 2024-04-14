@@ -2,7 +2,7 @@
 {
     public enum BookStatus
     {
-        Borrowed,
+        Pending,
         Available,
         NotAvailable
     }

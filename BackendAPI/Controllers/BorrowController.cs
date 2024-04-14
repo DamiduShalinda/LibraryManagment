@@ -22,14 +22,47 @@ namespace BackendAPI.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckouts()
+        [Authorize(Roles ="Admin")]
+        public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckoutsByAdmin([FromQuery] bool? IsApproved)
         {
             try
             {
-                var bookCheckOutList = await _context.BorrowedBooks.Where(_ => _.IsApproved == false).ToListAsync();
+                IQueryable<BorrowedBooks> query = _context.BorrowedBooks.Include(_ => _.ApplicationUser);
+                if (IsApproved.HasValue)
+                {
+                    query =    query.Where(_ => _.IsApproved == IsApproved.Value);
+                }
+                var bookCheckOutList = await query.ToListAsync();
                 if (bookCheckOutList.Count == 0)
                     return NoContent();
-               List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUserId, _.BorrowedDate)).ToList();
+               List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUser.Name, _.BorrowedDate)).ToList();
+                return Ok(itemList);
+            } catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("user")]
+        [Authorize(Roles ="User")]
+        public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckoutsByUser([FromQuery] bool? IsApproved)
+        {
+            try
+            {
+                var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                    return Unauthorized();
+                IQueryable<BorrowedBooks> query = _context.BorrowedBooks
+                    .Include(_ => _.ApplicationUser)
+                    .Where(_ => _.ApplicationUser.Id == userIdClaim);
+                if (IsApproved.HasValue)
+                {
+                    query = query.Where(_ => _.IsApproved == IsApproved.Value);
+                }
+                var bookCheckOutList = await query.ToListAsync();
+                if (bookCheckOutList.Count == 0)
+                    return NoContent();
+                List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUser.Name, _.BorrowedDate)).ToList();
                 return Ok(itemList);
             } catch (Exception ex)
             {
@@ -87,6 +120,7 @@ namespace BackendAPI.Controllers
 
         [HttpPost("checkout")]
         [Authorize(Roles ="User")]
+        //Add Checkout request
         public async Task<ActionResult<string>> CheckOutBooks(BookCheckOutRequest request)
         {
             try
@@ -105,6 +139,7 @@ namespace BackendAPI.Controllers
                     if (book == null)
                         return NotFound();
                     else
+                        book.Status = BookStatus.Pending;
                         bookList.Add(book);
                 }
 
@@ -130,6 +165,7 @@ namespace BackendAPI.Controllers
 
         [HttpGet("approve/{id}")]
         [Authorize(Roles ="Admin")]
+        //Approve or Reject Checkout Request
         public async Task<ActionResult<string>> ApprovingCheckOutRequest(int id , string? RejectedReason)
         {
             try
@@ -138,7 +174,11 @@ namespace BackendAPI.Controllers
                 if (BorrowedBooksRecord == null)
                     return NotFound($"No Record Founder under id:{id}");
                 if (RejectedReason == null)
+                {
                     BorrowedBooksRecord.IsApproved = true;
+                    foreach (var book in BorrowedBooksRecord.Books)
+                        book.Status = BookStatus.NotAvailable;
+                }
                 else
                     BorrowedBooksRecord.RejectedReason = RejectedReason;
                 await _context.SaveChangesAsync();
@@ -150,6 +190,39 @@ namespace BackendAPI.Controllers
             }
         }
 
+        [HttpGet("complete/{id}")]
+        [Authorize(Roles = "Admin")]
+        //Complete Checkout request after approved it
+        public async Task<ActionResult<string>> CompleteCheckoutRequest(int id , string? Remarks)
+        {
+            try
+            {
+                var BorrowedBooksRecord = await _context.BorrowedBooks.FindAsync(id);
+                if (BorrowedBooksRecord == null)
+                    return NotFound($"Not any Records found under id:{id}");
+                if (BorrowedBooksRecord.IsApproved == false)
+                    return NotFound($"Not any Appoved Records found under id:{id}");
+                BorrowedBooksRecord.IsApproved= true;
+                BorrowedBooksRecord.CompletedDate = DateTime.Now;
+                if (Remarks != null)
+                    BorrowedBooksRecord.Remarks = Remarks;
+                foreach (var books in BorrowedBooksRecord.Books)
+                {
+                    var dbBook = await _context.Books.FindAsync(books.Id);
+                    if (dbBook == null)
+                        continue;
+                    dbBook.Status = BookStatus.Available;
+                }
+                await _context.SaveChangesAsync();
+                return Ok($"Request under id:{id} is completed");
+            } catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+
         [HttpDelete("{id}")]
         public async Task<ActionResult<string>> DeleteCheckoutRequest(int id)
         {
@@ -158,6 +231,8 @@ namespace BackendAPI.Controllers
                 var deletingRequest = await _context.BorrowedBooks.FindAsync(id);
                 if (deletingRequest == null)
                     return NotFound();
+                foreach (var book in deletingRequest.Books)
+                    book.Status = BookStatus.Available;
                 _context.BorrowedBooks.Remove(deletingRequest);
                 await _context.SaveChangesAsync();
                 return Ok("Deleted the checkout Request");
