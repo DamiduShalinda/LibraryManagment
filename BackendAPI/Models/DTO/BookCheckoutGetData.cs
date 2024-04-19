@@ -11,5 +11,5 @@
 
     public record BookCheckOutRequest(List<int> BookList , DateTime CheckOutDate);
 
-    public record BookCheckOutListItem(int Id , string? UserName , DateTime RequestedDate);
+    public record BookCheckOutListItem(int Id , string? UserName , DateTime RequestedDate , bool IsApproved);
 }

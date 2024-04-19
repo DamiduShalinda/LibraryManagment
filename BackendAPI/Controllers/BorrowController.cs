@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BackendAPI.Controllers
 {
@@ -22,47 +21,26 @@ namespace BackendAPI.Controllers
 
 
         [HttpGet]
-        [Authorize(Roles ="Admin")]
+        [Authorize]
+        //if role is user it returns user's request and if role is admin it returns all requests
         public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckoutsByAdmin([FromQuery] bool? IsApproved)
         {
             try
             {
-                IQueryable<BorrowedBooks> query = _context.BorrowedBooks.Include(_ => _.ApplicationUser);
-                if (IsApproved.HasValue)
-                {
-                    query =    query.Where(_ => _.IsApproved == IsApproved.Value);
-                }
-                var bookCheckOutList = await query.ToListAsync();
-                if (bookCheckOutList.Count == 0)
-                    return NoContent();
-               List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUser.Name, _.BorrowedDate)).ToList();
-                return Ok(itemList);
-            } catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
 
-        [HttpGet("user")]
-        [Authorize(Roles ="User")]
-        public async Task<ActionResult<IEnumerable<BookCheckOutListItem>>> GetAllBookCheckoutsByUser([FromQuery] bool? IsApproved)
-        {
-            try
-            {
+                var userRole = HttpContext.User.FindFirstValue(ClaimTypes.Role);
                 var userIdClaim = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (userIdClaim == null)
+                if (userRole == null || userIdClaim == null) 
                     return Unauthorized();
-                IQueryable<BorrowedBooks> query = _context.BorrowedBooks
-                    .Include(_ => _.ApplicationUser)
-                    .Where(_ => _.ApplicationUser.Id == userIdClaim);
+                IQueryable<BorrowedBooks> query = _context.BorrowedBooks.Include(_ => _.ApplicationUser);
+                if (userRole == "User")
+                    query = query.Where(_ => _.ApplicationUser.Id == userIdClaim);
                 if (IsApproved.HasValue)
-                {
-                    query = query.Where(_ => _.IsApproved == IsApproved.Value);
-                }
+                    query =    query.Where(_ => _.IsApproved == IsApproved.Value);
                 var bookCheckOutList = await query.ToListAsync();
                 if (bookCheckOutList.Count == 0)
                     return NoContent();
-                List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUser.Name, _.BorrowedDate)).ToList();
+               List<BookCheckOutListItem> itemList = bookCheckOutList.Select(_ => new BookCheckOutListItem(_.Id, _.ApplicationUser.Name, _.BorrowedDate , _.IsApproved)).ToList();
                 return Ok(itemList);
             } catch (Exception ex)
             {
@@ -71,6 +49,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles ="Admin")]
         public async Task<ActionResult<GetCheckoutByIdDTO>> GetCheckOutBookById(int Id)
         {
             try
