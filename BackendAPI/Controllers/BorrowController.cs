@@ -49,7 +49,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles ="Admin")]
+        [Authorize]
         public async Task<ActionResult<GetCheckoutByIdDTO>> GetCheckOutBookById(int Id)
         {
             try

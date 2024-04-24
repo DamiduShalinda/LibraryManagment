@@ -120,6 +120,10 @@ namespace BackendAPI.Migrations
                     b.Property<int>("AuthorId")
                         .HasColumnType("int");
 
+                    b.Property<string>("BookCoverImagePath")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("BookDescription")
                         .IsRequired()
                         .HasColumnType("longtext");

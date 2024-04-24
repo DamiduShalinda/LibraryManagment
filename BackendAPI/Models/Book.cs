@@ -17,6 +17,7 @@
 
         public string BookDescription { get; set; }
         public virtual Author Author { get; set; }
+        public string BookCoverImagePath { get; set; }
 
         public DateTime AdddedAt { get; set; } = DateTime.Now;
 
@@ -29,6 +30,29 @@
             BookName = bookName;
             ISBN = iSBN;
             Author = author;
+        }
+
+        public void SaveCoverImage(byte[] imageBytes , string folderPath , string FileName)
+        {
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+            string filePath = Path.Combine(folderPath, FileName);
+            File.WriteAllBytes(filePath, imageBytes);
+
+            BookCoverImagePath = filePath;
+        }
+
+        public byte[] GetCoverImage()
+        {
+            if (File.Exists(BookCoverImagePath))
+            {
+                return File.ReadAllBytes(BookCoverImagePath);
+            } else
+            {
+                return null;
+            }
         }
     }
 }

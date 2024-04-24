@@ -17,7 +17,7 @@ namespace BackendAPI.Controllers
     public class BooksController(ApplicationDbContext context) : ControllerBase
     {
         private readonly ApplicationDbContext _context = context;
-
+        private static readonly string CoverImagesFolder = "images/bookcovers";
 
         // GET: api/Books
         [HttpGet]
@@ -121,9 +121,61 @@ namespace BackendAPI.Controllers
             return NoContent();
         }
 
+        [HttpPost("image/{id}")]
+        public async Task<IActionResult> AddBookCoverImage(int Id, [FromForm] IFormFile File)
+        {
+            try
+            {
+                var book = await _context.Books.FindAsync(Id);
+                if (book == null)
+                    return NotFound();
+                string fileName = Guid.NewGuid().ToString() + Path.GetExtension(File.FileName);
+                book.SaveCoverImage(await GetByteArrayFromFormFile(File), CoverImagesFolder, fileName);
+                book.BookCoverImagePath = fileName;
+                await _context.SaveChangesAsync();
+                return Ok($"Cover Image Added for book {book.BookName} ");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
+        [HttpGet("image/{id}")]
+        public async Task<IActionResult> GetBookCoverImage(int id , [FromServices] IHttpContextAccessor httpContextAccessor)
+        {
+            try
+            {
+                var book = await _context.Books.FindAsync(id);
+                if (book == null || string.IsNullOrEmpty(book.BookCoverImagePath))
+                    return NotFound();
+
+                var request = httpContextAccessor.HttpContext.Request;
+                var serverAddress = $"{request.Scheme}://{request.Host}";
+                var imageUrl = $"{serverAddress}/api/image/{book.BookCoverImagePath}";
+
+                return Ok(new { imageUrl });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        private async Task<byte[]> GetByteArrayFromFormFile(IFormFile file)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                await file.CopyToAsync(memoryStream);
+                return memoryStream.ToArray();
+            }
+        }
+
         private bool BooksExists(int id)
         {
             return _context.Books.Any(e => e.Id == id);
         }
+
     }
 }
